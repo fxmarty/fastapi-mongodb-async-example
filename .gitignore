@@ -1,3 +1,4 @@
 playground/
 app/routers/__pycache__/
 app/__pycache__/
+data/*
