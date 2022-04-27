@@ -10,7 +10,7 @@ This project best runs within a Docker container. Run
 docker build -t fastapi_mongodb_example . && docker run -it --net=host fastapi_mongodb_example
 ```
 
-and check both `mongod` and `unicorn` start properly. Check as well this address for Uvicorn local server (on the line `Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)`).
+and check both `mongod` and `unicorn` start properly. Check as well the address for the Uvicorn local server (as an example on the line `Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)`).
 
 Both MongoDB database and Unicorn server should be accessible from the host machine.
 
