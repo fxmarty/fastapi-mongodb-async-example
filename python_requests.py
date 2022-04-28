@@ -28,7 +28,7 @@ response = session.request(method, url=build_url(api_url, endpoint, query), json
 pprint(response.json())
 print(response.status_code)
 
-body = {"username": "sylvie"}
+body = {"username": "sylve"}
 
 response = session.request(method, url=build_url(api_url, endpoint, query), json=body)
 pprint(response.json())
@@ -39,7 +39,7 @@ endpoint = "/posts/new"
 query = {"username": "sylvie"}
 method = "PUT"
 body = {
-    "title": "This is my 3 post.",
+    "title": "This is my 4 post.",
     "text": "Hello everyone I am Felix!",
     "category": "Presentations",
 }
@@ -50,8 +50,8 @@ print(response.status_code)
 
 ## edit post
 endpoint = "/posts/edit"
-post_id = "626678a7f8237a5ae82e607a"
-query = {"username": "felix", "post_id": post_id}
+post_id = "626a4f77a866ef3cfcc1257d"
+query = {"username": "mirai", "post_id": post_id}
 method = "PUT"
 body = {"text": "I just want to edit the text"}
 
@@ -63,11 +63,12 @@ print(response.status_code)
 endpoint = "/posts/search"
 # query = {"start": "2022-01-01"}
 # query = {"title": "This", "author": "sylvie"}
-query = {"post_id": "6266862792fb0d6439d1530d"}
+query = {"post_id": "626a5153adc512765dc27794"}
 method = "GET"
 body = {}
 
 response = session.request(method, url=build_url(api_url, endpoint, query), json=body)
+#print(response.text)
 res_json = response.json()
 print(res_json)
 res = json.loads(res_json, object_hook=json_util.object_hook)

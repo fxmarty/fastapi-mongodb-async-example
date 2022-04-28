@@ -2,13 +2,11 @@ import sys
 from enum import Enum
 from typing import List, Optional
 
-import pymongo
 from fastapi import Body, FastAPI, Path, Query
 from pydantic import BaseModel, Field
-from pymongo.errors import ConnectionFailure
 
+from .db import client
 from .routers import comments, posts, users
-from .utils import server_path
 
 tags_metadata = [
     {
@@ -25,15 +23,12 @@ tags_metadata = [
     },
 ]
 
-client = pymongo.MongoClient(server_path)
-
 try:
-    # The ismaster command is cheap and does not require auth.
-    client.admin.command("ismaster")
-    print("Connected to MongoDB.")
-except ConnectionFailure:
-    print(f"Server {server} not available, exiting.")
-    sys.exit(1)
+   # The ismaster command is cheap and does not require auth.
+   client.admin.command('ismaster')
+   print("Connected to MongoDB server")
+except Exception as e:
+   print(e)
 
 
 app = FastAPI(openapi_tags=tags_metadata)

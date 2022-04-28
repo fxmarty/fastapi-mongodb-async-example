@@ -4,17 +4,15 @@ from enum import Enum
 from typing import List, Optional
 
 import pydantic
-import pymongo
 from bson import ObjectId, json_util
 from fastapi import APIRouter, Body, Path, Query, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-from ..utils import PostContent, PostEdit, User, date_format, server_path
+from ..utils import PostContent, PostEdit, User, date_format
+from ..db import client
 
 pydantic.json.ENCODERS_BY_TYPE[ObjectId] = str
-
-client = pymongo.MongoClient(server_path)
 
 project_db = client.project
 users_collection = project_db.get_collection("users")
@@ -24,7 +22,7 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 
 
 @router.get("/search", description="Search for a post")
-def search_posts(
+async def search_posts(
     title: Optional[str] = Query(
         None, description="Text to find in the title of the post"
     ),
@@ -63,24 +61,25 @@ def search_posts(
 
     cursor = posts_collection.find(query_dict)
 
-    res = json_util.dumps(cursor)
+    res = await cursor.to_list(length=100)
+    res = json_util.dumps(res)
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=res)
 
 
 @router.put("/new")
-def create_post(username: str, post_content: PostContent):
-    if users_collection.count_documents({"username": username}) == 0:
+async def create_post(username: str, post_content: PostContent):
+    if (await users_collection.count_documents({"username": username})) == 0:
         user_json = jsonable_encoder(User(username=username))
-        result = users_collection.insert_one(user_json)
+        result = await users_collection.insert_one(user_json)
 
     post_json = jsonable_encoder(post_content)
     post_json["_date"] = datetime.now()
     post_json["author"] = username
-    result = posts_collection.insert_one(post_json)
+    result = await posts_collection.insert_one(post_json)
     print(result)
 
-    result = users_collection.update_one(
+    result = await users_collection.update_one(
         {"username": username}, {"$push": {"posts": post_json["_id"]}}
     )
     print(result)
@@ -89,12 +88,12 @@ def create_post(username: str, post_content: PostContent):
 
 
 @router.put("/edit")
-def edit_post(username: str, post_id: str, post: PostEdit):
-    if users_collection.count_documents({"username": username}) == 0:
+async def edit_post(username: str, post_id: str, post: PostEdit):
+    if (await users_collection.count_documents({"username": username})) == 0:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content="User do not exist"
         )
-    elif posts_collection.count_documents({"_id": ObjectId(post_id)}) == 0:
+    elif (await posts_collection.count_documents({"_id": ObjectId(post_id)})) == 0:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content="Post do not exist"
         )
@@ -102,27 +101,27 @@ def edit_post(username: str, post_id: str, post: PostEdit):
         updates = post.dict(exclude_unset=True)
         updates["_date"] = datetime(2021, 2, 12)
         filter_row = {"_id": ObjectId(post_id)}
-        result = posts_collection.update_one(filter_row, {"$set": updates})
+        result = await posts_collection.update_one(filter_row, {"$set": updates})
         print(result)
         return "Updated post"
 
 
 @router.put("/delete")
-def delete_post(username: str, post_id: str):
-    if users_collection.count_documents({"username": username}) == 0:
+async def delete_post(username: str, post_id: str):
+    if (await users_collection.count_documents({"username": username})) == 0:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content="User do not exist"
         )
-    elif posts_collection.count_documents({"_id": ObjectId(post_id)}) == 0:
+    elif (await posts_collection.count_documents({"_id": ObjectId(post_id)})) == 0:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content="Post do not exist"
         )
     else:
-        result = users_collection.update_one(
+        result = await users_collection.update_one(
             {"username": username}, {"$pull": {"posts": ObjectId(post_id)}}
         )
         print(result)
-        result = posts_collection.delete_one({"_id": ObjectId(post_id)})
+        result = await posts_collection.delete_one({"_id": ObjectId(post_id)})
         print(result)
         return JSONResponse(
             status_code=status.HTTP_200_OK, content=f"Removed post successfully"
